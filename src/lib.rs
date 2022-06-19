@@ -172,58 +172,57 @@ mod tests {
 
     prop_compose! {
         fn jeopardy_category_strategy()(
-            name in ".*",
+            name in any::<String>(),
             answers in prop::collection::vec(jeopardy_answer_strategy(), 5),
         ) -> JeopardyCategory {
             JeopardyCategory { name, answers }
         }
     }
 
+    prop_compose! {
+        fn path_buf_strategy()(
+            path in prop::collection::vec(any::<String>(), 1..10),
+        ) -> PathBuf {
+            PathBuf::from(path[0].as_str())
+        }
+    }
+
     fn jeopardy_answer_strategy() -> impl Strategy<Value = JeopardyAnswer> {
         prop_oneof![
-            (".*", ".*", any::<bool>()).prop_map(|(answers, question, dj)| {
-                JeopardyAnswer::Text {
-                    answer: answers,
-                    question: question,
+            (any::<String>(), any::<String>(), any::<bool>()).prop_map(
+                |(answers, question, dj)| {
+                    JeopardyAnswer::Text {
+                        answer: answers,
+                        question: question,
+                        double_jeopardy: dj,
+                    }
+                }
+            ),
+            (any::<String>(), path_buf_strategy(), any::<bool>()).prop_map(
+                |(answers, path, dj)| {
+                    JeopardyAnswer::Image {
+                        question: answers,
+                        image: path,
+                        double_jeopardy: dj,
+                    }
+                }
+            ),
+            (any::<String>(), path_buf_strategy(), any::<bool>()).prop_map(
+                |(answers, path, dj)| {
+                    JeopardyAnswer::Audio {
+                        question: answers,
+                        audio: path,
+                        double_jeopardy: dj,
+                    }
+                }
+            ),
+            (any::<String>(), path_buf_strategy(), any::<bool>()).prop_map(|(answer, path, dj)| {
+                JeopardyAnswer::Video {
+                    question: answer,
+                    video: path,
                     double_jeopardy: dj,
                 }
             }),
-            (
-                ".*",
-                prop::collection::vec("[a-zA-Z0-9_]*", 1..10),
-                any::<bool>()
-            )
-                .prop_map(|(answers, path_vec, dj)| {
-                    JeopardyAnswer::Image {
-                        question: answers,
-                        image: path_vec.iter().collect(),
-                        double_jeopardy: dj,
-                    }
-                }),
-            (
-                ".*",
-                prop::collection::vec("[a-zA-Z0-9_]*", 1..10),
-                any::<bool>()
-            )
-                .prop_map(|(answers, path_vec, dj)| {
-                    JeopardyAnswer::Audio {
-                        question: answers,
-                        audio: path_vec.iter().collect(),
-                        double_jeopardy: dj,
-                    }
-                }),
-            (
-                ".*",
-                prop::collection::vec("[a-zA-Z0-9_]*", 1..10),
-                any::<bool>()
-            )
-                .prop_map(|(answer, path_vec, dj)| {
-                    JeopardyAnswer::Video {
-                        question: answer,
-                        video: path_vec.iter().collect(),
-                        double_jeopardy: dj,
-                    }
-                }),
         ]
     }
 
